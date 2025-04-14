@@ -1,7 +1,7 @@
 ---
 title: "Lab 11 - Grading the professor, Pt. 2"
-author: "Insert your name here"
-date: "Insert date here"
+author: "Lilly McClendon"
+date: "04.18.2025"
 output: github_document
 ---
 
@@ -11,26 +11,93 @@ output: github_document
 library(tidyverse) 
 library(tidymodels)
 library(openintro)
+view(evals)
 ```
+
+# Part 1: Simple Linear Regression 
 
 ## Exercise 1
 
-*Provide your answer here.*  
-Add code chunks as needed. Ensure code chunks are properly labeled without spaces.
+```{r linear-regression}
 
-```{r exercise1_code}
-# Add your R code here
+m_bty <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ bty_avg, data = evals) %>% 
+tidy()
+view(m_bty)
+
+library(tidymodels)
+library(broom)
+
+R_m_bty <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ bty_avg, data = evals)
+
+broom::glance(R_m_bty$fit)
 ```
+$\hat{\text{Score}}_i$ = 3.88 + 0.07 x bty_avg$_i$. The R squared value is 0.04 and the adjusted R squared value is 0.03. 
+
+
+# Part 2: Multiple Linear Regression
 
 ## Exercise 2
 
-*Provide your answer here.*  
-Add code chunks as needed.
+```{r linear-regression-bty_avg-gender}
+m_bty_gen <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ bty_avg + gender, data = evals)
+tidy(m_bty_gen)
+contrasts(evals$gender)
 
-```{r exercise2_code}
-# Add your R code here
+broom::glance(m_bty_gen$fit)
+
+tidy(m_bty_gen) %>% 
+  mutate(exp_estimate = exp(estimate)) %>% 
+  select(term, estimate, exp_estimate)
 ```
 
-## Additional Exercises
+$\hat{\text{Score}}_i$ = 3.75 + 0.07 x bty_avg$_i$ + 0.17 x gender$_i$. The R squared is 0.06 and the adjusted R squared is 0.06. 
 
-*Repeat the format above for additional exercises.*
+
+## Exercise 3 
+
+females: Score = 3.75 + (0.07 x bty_avg) + (0.17 x 0)
+         Score = 3.75 + 0.07 x bty_avg 
+         
+males: Score = 3.75 + (0.07 x bty_avg) + (0.17 x 1) 
+       Score = 3.75 + 0.07 x bty_avg + 0.17 
+
+Scores for female professors that have an average beauty rating of 0,are predicted on average to have a score of 42.41.
+
+When everything else is held constant, scores for a male professor are predicted on average to be higher by a factor of 1.19 compared to scores for female professors. 
+
+When everything else is held constant, for each additional point in average beauty, the score of a professor is expected to be on average higher by a factor fo 1.08. 
+
+## Exercise 4 
+
+6% of the variability in score is explained by gender and average beauty score. 
+
+## Exercise 5 
+
+The equation of the line corresponding to just male professors is $\hat{\text{Score}}_i$ = 3.75 + 0.07 x bty_avg$_i$ + 0.17 
+
+## Exercise 6
+
+For two professors who received the same beauty rating, males tend to have the higher course evaluation score. 
+
+## Exercise 7 
+
+```{r linear-regression-bty_avg-gender}
+m_int_bty_gen <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ bty_avg * gender, data = evals)
+tidy(m_int_bty_gen)
+```
+score = 3.95 + 0.03 x bty_avg - 0.18 x gender + 0.08 x bty_avg*gender
+
+female: score = 3.95 + 0.03 x bty_avg + 0.08 x bty_avg*gender
+
+male: score = 3.95 + 0.03 x bty_avg - 0.18 x 1
+
+
+ 
