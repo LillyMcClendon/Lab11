@@ -71,7 +71,13 @@ Scores for female professors that have an average beauty rating of 0,are predict
 
 When everything else is held constant, scores for a male professor are predicted on average to be higher by a factor of 1.19 compared to scores for female professors. 
 
-When everything else is held constant, for each additional point in average beauty, the score of a professor is expected to be on average higher by a factor fo 1.08. 
+When everything else is held constant, for each additional point in average beauty, the score of a professor is expected to be on average higher by a factor of 1.08. 
+
+Slope-bty_avg: all else held constant, for each additional beauty average point, we would expect the score to be higher on average by 0.07 points. 
+
+Slope-gender: all else held constant, males on average have 0.17 more points of a score than females. 
+
+Intercept: males with 0 beauty average points are expected to have a score of 3.75 on average. 
 
 ## Exercise 4 
 
@@ -87,17 +93,193 @@ For two professors who received the same beauty rating, males tend to have the h
 
 ## Exercise 7 
 
-```{r linear-regression-bty_avg-gender}
+```{r linear-regression-bty_avg-gender-int}
 m_int_bty_gen <- linear_reg() %>% 
   set_engine("lm") %>% 
   fit(score ~ bty_avg * gender, data = evals)
 tidy(m_int_bty_gen)
 ```
-score = 3.95 + 0.03 x bty_avg - 0.18 x gender + 0.08 x bty_avg*gender
+score = 3.95 + (0.03 x bty_avg) - (0.18 x gender) + (0.08 x bty_avg*gender)
 
-female: score = 3.95 + 0.03 x bty_avg + 0.08 x bty_avg*gender
+females: 
+score = 3.95 + (0.03 x bty_avg) - (0.18 x 0) + (0.08 x bty_avg*0)
 
-male: score = 3.95 + 0.03 x bty_avg - 0.18 x 1
+score = 3.95 + (0.03 x bty_avg) 
+
+males: 3.95 + (0.03 x bty_avg) - (0.18 x 1) + (0.08 x bty_avg*1)
+
+males: 3.77 + (0.03 x bty_avg) + (0.08 x bty_avg*1)
+
+males: 3.77 + (0.11 x bty_avg) 
+
+The rate of change in score as the beauty average score increases does vary between the male and female professors (different slopes). Some scores are higher for male professors, but some are not (different intercept).
+
+## Exercise 8 
+
+The adjusted R squared value of m_bty is 0.03 and the adjusted R squared value for m_bty_gen is 0.06. When we include the interaction, the adjusted R squared value is greater, so we should use the model that includes the interactions. The adjusted R squared value is a measure of how much variability is explained for by the model while accounting for the number of predictors. Because the adjusted R squared value increased when we added the interaction, it indicates that the interaction improves how well the model predicts score. Therefore, I would say that gender is useful in explaining the variability in evaluation scores when we already have information on the beauty score of the professor, and the interaction between beauty score and gender further improves the model.   
 
 
- 
+## Exercise 9 
+
+In the m_bty model, the slope for bty_avg is 0.07. In the m_bty_gen model, the slope for bty_avg is 0.03. By adding gender to the model, the slope for bty_avg decreased. This possibly could be because of multicollinearity as there could be a correlation between beauty score and gender and when adding in gender, some of the variance explained by bty_avg in the m_bty model may have been shifted to the variance explained by gender. 
+
+## Exercise 10 
+
+```{r linear-regression-bty_avg-rank-main}
+m_bty_rank <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ bty_avg + rank, data = evals)
+tidy(m_bty_rank)
+contrasts(evals$rank)
+
+
+broom::glance(m_bty_rank$fit)
+
+tidy(m_bty_rank) %>% 
+  mutate(exp_estimate = exp(estimate)) %>% 
+  select(term, estimate, exp_estimate)
+```
+
+score = 3.98 + (0.07 * bty_avg) - (0.16 * tenure track) - (0.13*tenured)
+
+teaching: = 3.98 - (0.16 * 0) - (0.13*0)
+          = 3.98 + (0.07 * bty_avg
+
+tenure track: = 3.98 - (0.16 * 1) - (0.13*0)
+              = 3.82 + (0.07 * bty_avg
+              
+tenured: = 3.98 - (0.16 * 0) - (0.13*1)
+         = 3.85 +  (0.07 * bty_avg) 
+
+
+Different intercept, so scores for teaching professors are consistently higher than scores for tenure track or tenured professors. There is the same slope, so the rate of change in score as bty_avg increases does not vary between teaching, tenure track, and tenured professors. 
+
+
+```{r linear-regression-bty_avg-rank-interception}
+m_int_bty_rank <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ bty_avg * rank, data = evals)
+tidy(m_int_bty_rank)
+contrasts(evals$rank)
+
+
+broom::glance(m_int_bty_rank$fit)
+
+tidy(m_int_bty_rank) %>% 
+  mutate(exp_estimate = exp(estimate)) %>% 
+  select(term, estimate, exp_estimate)
+```
+
+
+# Part 3: The search for the best model 
+
+## Exercise 11 
+
+On its own, I would expect the worst predictor of evaluation score to be cls_credits. 
+
+## Exercise 12 
+
+```{r linear-regression-cls_dideval}
+
+m_cls_did_eval <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ cls_did_eval, data = evals) %>% 
+tidy()
+view(m_cls_did_eval)
+
+library(tidymodels)
+library(broom)
+
+R_m_cls_did_eval <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ cls_did_eval, data = evals)
+
+broom::glance(R_m_cls_did_eval$fit)
+```
+
+I expected that the variable on its own that would be the worst predictor of evaluation scores would be cls_credits. The model has an R squared value of 0.004 which means that 0.4% of the variance in evaluation scores is explained by cls_credits. 
+
+## Exercise 13 
+
+If I was going to fit a full model with variables like cls_perc_eval and cls_students, the variable I should not include as an additional predictor would be cls_did_eval. Because the number of students in class who completed evaluation can be calculated from the cls_perc_eval and the cls_students. I would not add cls_did_eval because it is tied to the cls_perc_eval and cls_students and therefore could lead to multicollinearity which may make it more difficulty to understand how each predictor explains some of the variability in the model.   
+
+
+## Exercise 14 
+
+
+```{r linear-regression-full_model}
+
+m_full_model <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + cls_students + cls_level + cls_profs + cls_credits + bty_avg, data = evals) %>% 
+tidy()
+view(m_full_model)
+
+library(tidymodels)
+library(broom)
+
+R_m_full_model <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + cls_students + cls_level + cls_profs + cls_credits + bty_avg, data = evals)
+
+broom::glance(R_m_full_model$fit)
+```
+
+
+## Exercise 15 
+
+```{r backward-selection}
+library(MASS)
+
+lm_full_model <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + cls_students + cls_level + cls_profs + cls_credits + bty_avg, data = evals)
+
+best_model <- stepAIC(lm_full_model, direction = "backward", trace = 1)
+summary(best_model)
+
+best_model_only_best <- stepAIC(lm_full_model, direction = "backward", trace = 0)
+summary(best_model_only_best)
+```
+
+
+score = 3.45 + (0.20 * ethnicity) + (0.18 * gender)  + (0.01*cls_perc_eval) + (0.52*cls_credits) + (0.06* bty_avg) 
+
+
+## Exercise 16 
+
+Evaluation scores for males are expected on average to be 0.18 higher than evaluation scores for females. 
+
+When all else is held constant, the slope of cls_perc_eval indicates that for each additional percentage point that cls_perc_eval is higher, the evaluation score is expected to be higher on average by 0.01. 
+
+
+## Exercise 17 
+
+Based on the final model, the characteristics of a professor and a course at University of Texas at Austin that would be associated with a high evaluation score would be a course that is one-credit where a higher percentage of students complete the evaluation with a professor who is male, not a minority, and has a higher beauty average. 
+
+
+```{r linear-regression-full_model-best-fit}
+
+m_best_full_model <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~  ethnicity + gender + cls_perc_eval + cls_credits + bty_avg, data = evals) %>% 
+tidy()
+view(m_best_full_model)
+
+library(tidymodels)
+library(broom)
+
+R_m_best_full_model <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(score ~ ethnicity + gender + cls_perc_eval + cls_credits + bty_avg, data = evals)
+
+broom::glance(R_m_best_full_model$fit)
+
+contrasts(evals$gender)
+contrasts(evals$ethnicity)
+contrasts(evals$cls_credits)
+```
+
+
+
+## Exercise 18
+
+I would not be comfortable generalizing my conclusions to apply to professors generally because the adjusted r square of the best model is 0.14 which indicates that only 14% of the variance in evaluation scores is due to the predictors. Because less than a fifth of the variance is explained, I would take great caution in generalizing my conclusions. 
